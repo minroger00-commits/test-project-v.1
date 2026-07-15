@@ -1,0 +1,6 @@
+{
+  "name": "Family PayLater",
+  "description": "ระบบจัดการวงเงินและรายการผ่อนชำระภายในครอบครัว เพื่อแยกประเภทค่าใช้จ่ายและตรวจสอบยอดหนี้รายบุคคล",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
