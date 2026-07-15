@@ -345,6 +345,7 @@ export default function App() {
   }, []);
 
   const [profileToLogin, setProfileToLogin] = useState<UserProfile | null>(null);
+  const [usernameInput, setUsernameInput] = useState<string>('');
   const [pinInput, setPinInput] = useState<string>('');
   const [loginError, setLoginError] = useState<string>('');
 
@@ -429,19 +430,45 @@ export default function App() {
   const familyLimitRemaining = totalFamilyLimit - totalFamilySpent;
 
   // --- Auth Handlers ---
+  const findProfileByInput = (input: string): UserProfile | null => {
+    const trimmed = input.trim().toLowerCase();
+    if (!trimmed) return null;
+
+    // Check by exact username
+    let found = profiles.find(p => p.username?.toLowerCase() === trimmed);
+    if (found) return found;
+
+    // Check by exact name (case-insensitive)
+    found = profiles.find(p => p.name.toLowerCase() === trimmed);
+    if (found) return found;
+
+    // Check if name contains input or username contains input
+    found = profiles.find(p => p.name.toLowerCase().includes(trimmed) || (p.username && p.username.toLowerCase().includes(trimmed)));
+    if (found) return found;
+
+    return null;
+  };
+
   const handleProfileSelect = (profile: UserProfile) => {
     setProfileToLogin(profile);
+    setUsernameInput(profile.username || profile.name);
     setPinInput('');
     setLoginError('');
   };
 
   const handlePinSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!profileToLogin) return;
+    
+    const matched = profileToLogin || findProfileByInput(usernameInput);
+    if (!matched) {
+      setLoginError('ไม่พบชื่อผู้ใช้งานนี้ กรุณาตรวจสอบอีกครั้ง');
+      return;
+    }
 
-    if (pinInput === profileToLogin.pin) {
-      setCurrentUser(profileToLogin);
+    if (pinInput === matched.pin) {
+      setCurrentUser(matched);
       setProfileToLogin(null);
+      setUsernameInput('');
       setPinInput('');
       setLoginError('');
       setActiveTab('main');
@@ -452,23 +479,27 @@ export default function App() {
 
   // Auto-validate PIN on reaching 4 characters
   useEffect(() => {
-    if (profileToLogin && pinInput.length === 4) {
-      if (pinInput === profileToLogin.pin) {
-        setCurrentUser(profileToLogin);
-        setProfileToLogin(null);
-        setPinInput('');
-        setLoginError('');
-        setActiveTab('main');
-      } else {
-        setLoginError('รหัส PIN ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
-        // Auto-clear the pin input after a short delay so user can retry
-        const timer = setTimeout(() => {
+    if (pinInput.length === 4) {
+      const matched = profileToLogin || findProfileByInput(usernameInput);
+      if (matched) {
+        if (pinInput === matched.pin) {
+          setCurrentUser(matched);
+          setProfileToLogin(null);
+          setUsernameInput('');
           setPinInput('');
-        }, 1000);
-        return () => clearTimeout(timer);
+          setLoginError('');
+          setActiveTab('main');
+        } else {
+          setLoginError('รหัส PIN ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+          // Auto-clear the pin input after a short delay so user can retry
+          const timer = setTimeout(() => {
+            setPinInput('');
+          }, 1000);
+          return () => clearTimeout(timer);
+        }
       }
     }
-  }, [pinInput, profileToLogin]);
+  }, [pinInput, profileToLogin, usernameInput, profiles]);
 
   const handleLogout = () => {
     setShowLogoutConfirm(true);
@@ -848,28 +879,44 @@ export default function App() {
               onSubmit={handlePinSubmit} 
               className="space-y-4"
             >
-              {/* Username Selector */}
+              {/* Username Input with Suggestions */}
               <div className="flex items-center bg-white rounded-md px-3.5 py-2.5 shadow-inner border border-slate-200">
                 <User className="w-5 h-5 text-slate-400 shrink-0" />
-                <select
-                  value={profileToLogin?.id || ''}
+                <input
+                  type="text"
+                  list="profiles-list"
+                  placeholder="Username"
+                  value={usernameInput}
                   onChange={(e) => {
-                    const prof = profiles.find(p => p.id === e.target.value);
-                    if (prof) {
-                      handleProfileSelect(prof);
-                    } else {
-                      setProfileToLogin(null);
-                    }
+                    const val = e.target.value;
+                    setUsernameInput(val);
+                    const matched = findProfileByInput(val);
+                    setProfileToLogin(matched);
+                    if (loginError) setLoginError('');
                   }}
-                  className="w-full bg-transparent text-slate-700 text-sm font-medium focus:outline-none pl-3 pr-2 cursor-pointer appearance-none"
-                >
-                  <option value="" disabled className="text-slate-400">Username</option>
+                  className="w-full bg-transparent text-slate-700 text-sm font-medium focus:outline-none pl-3 pr-2 placeholder:text-slate-400"
+                />
+                <datalist id="profiles-list">
                   {profiles.map((p) => (
-                    <option key={p.id} value={p.id} className="text-slate-800 font-medium">
-                      {p.username ? `${p.name} (${p.username})` : p.name}
+                    <option key={p.id} value={p.username || p.name}>
+                      {p.name}
                     </option>
                   ))}
-                </select>
+                </datalist>
+                {usernameInput && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUsernameInput('');
+                      setProfileToLogin(null);
+                      if (loginError) setLoginError('');
+                    }}
+                    className="text-slate-400 hover:text-slate-600 text-xs shrink-0 px-1 cursor-pointer mr-1"
+                    title="ล้างข้อมูล"
+                  >
+                    ✕
+                  </button>
+                )}
                 <div className="text-slate-400 pointer-events-none shrink-0">
                   <ChevronRight className="w-4 h-4 rotate-90" />
                 </div>
