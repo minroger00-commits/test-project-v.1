@@ -359,6 +359,7 @@ export default function App() {
   // Installment Request Form State
   const [productName, setProductName] = useState('');
   const [productPrice, setProductPrice] = useState<string>('');
+  const [interestRateInput, setInterestRateInput] = useState<string>('0');
   const [installmentTerm, setInstallmentTerm] = useState<number>(3);
   const [requestType, setRequestType] = useState<'pay_later' | 'cash_loan'>('pay_later');
   const [requestSuccess, setRequestSuccess] = useState<string | null>(null);
@@ -663,13 +664,20 @@ export default function App() {
   // --- Member Logic ---
   const handleCalculateInstallment = () => {
     const price = parseFloat(productPrice) || 0;
+    const rate = parseFloat(interestRateInput) || 0;
     if (price <= 0) return { monthly: 0, total: 0, interest: 0 };
 
-    const monthly = price / installmentTerm;
+    // Simple Interest formula:
+    // Total price including interest = price * (1 + (rate / 100) * installmentTerm)
+    // Monthly amount = Total / installmentTerm
+    const totalWithInterest = price * (1 + (rate / 100) * installmentTerm);
+    const monthly = totalWithInterest / installmentTerm;
+    const interestAmount = totalWithInterest - price;
+
     return {
       monthly: Math.round(monthly * 100) / 100,
-      total: price,
-      interest: 0
+      total: Math.round(totalWithInterest * 100) / 100,
+      interest: Math.round(interestAmount * 100) / 100
     };
   };
 
@@ -678,6 +686,7 @@ export default function App() {
     if (!currentUser) return;
 
     const price = parseFloat(productPrice) || 0;
+    const rate = parseFloat(interestRateInput) || 0;
     if (!productName.trim() || price <= 0) {
       setRequestError(
         requestType === 'cash_loan'
@@ -709,7 +718,7 @@ export default function App() {
       totalPrice: total,
       installments: installmentTerm,
       monthlyAmount: monthly,
-      interestRate: 0,
+      interestRate: rate,
       status: 'pending',
       requestDate: new Date().toISOString().split('T')[0],
       requestType: requestType
@@ -718,6 +727,7 @@ export default function App() {
     setRequests([newRequest, ...requests]);
     setProductName('');
     setProductPrice('');
+    setInterestRateInput('0');
     setInstallmentTerm(3);
     setRequestSuccess(
       requestType === 'cash_loan'
@@ -1660,7 +1670,7 @@ export default function App() {
                                       </td>
                                       <td className="px-4 py-3">
                                         <p className="text-xs font-semibold text-indigo-700">฿ {req.monthlyAmount.toLocaleString()}/ด.</p>
-                                        <p className="text-[10px] text-slate-500">ผ่อน {req.installments} เดือน</p>
+                                        <p className="text-[10px] text-slate-500">ผ่อน {req.installments} เดือน {req.interestRate > 0 ? `(ดบ. ${req.interestRate}%/ด.)` : '(ไม่มีดอกเบี้ย)'}</p>
                                       </td>
                                       <td className="px-4 py-3">
                                         <div className="flex gap-1">
@@ -2177,6 +2187,24 @@ export default function App() {
                                 </div>
                               </div>
 
+                              <div>
+                                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1">
+                                  อัตราดอกเบี้ยต่อเดือน (%)
+                                </label>
+                                <input 
+                                  type="number"
+                                  min={0}
+                                  step={0.1}
+                                  placeholder="ระบุอัตราดอกเบี้ย เช่น 1.5 หรือ 0 สำหรับไม่มีดอกเบี้ย"
+                                  value={interestRateInput}
+                                  onChange={e => setInterestRateInput(e.target.value)}
+                                  className="w-full text-sm p-3 border border-slate-300 rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                                />
+                                <span className="text-[10px] text-slate-400 block mt-0.5">
+                                  ระบุดอกเบี้ยต่อเดือน โดยระบบจะคำนวณแบบ Simple Interest (ดอกเบี้ยคงที่)
+                                </span>
+                              </div>
+
                               {/* Installment Calculation Section */}
                               <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
                                 <p className="text-xs font-bold text-slate-700">คำนวณยอดชำระเบื้องต้น</p>
@@ -2193,13 +2221,27 @@ export default function App() {
                                     <span className="text-slate-500">ระยะเวลาผ่อนชำระ:</span>
                                     <span className="font-semibold text-slate-700">{installmentTerm} เดือน</span>
                                   </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-500">อัตราดอกเบี้ยรายเดือน:</span>
+                                    <span className="font-semibold text-slate-700">{parseFloat(interestRateInput) || 0}% ต่อเดือน</span>
+                                  </div>
+                                  {calc.interest > 0 && (
+                                    <div className="flex justify-between text-amber-600">
+                                      <span>ดอกเบี้ยสะสมทั้งหมด:</span>
+                                      <span className="font-semibold">฿ {calc.interest.toLocaleString()}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex justify-between border-t border-slate-100 pt-1 text-slate-600">
+                                    <span>ยอดรวมชำระทั้งหมด (รวมดอกเบี้ย):</span>
+                                    <span className="font-semibold">฿ {calc.total.toLocaleString()}</span>
+                                  </div>
                                   <div className="flex justify-between border-t border-dashed border-slate-200 pt-2 mt-1 font-bold text-sm">
                                     <span className="text-slate-800">ยอดต้องชำระรายเดือน:</span>
                                     <span className="text-indigo-600">฿ {calc.monthly.toLocaleString()} / ด.</span>
                                   </div>
                                   <div className="text-[10px] text-slate-500 font-medium flex items-center justify-between gap-1 mt-1">
                                     <span>📅 กำหนดชำระทุกวันที่ 1 ของเดือนถัดไป</span>
-                                    <span className="text-slate-400">ดอกเบี้ย 0%</span>
+                                    <span className="text-indigo-600 font-semibold">{calc.interest > 0 ? `ดอกเบี้ยรวม ${(parseFloat(interestRateInput) || 0) * installmentTerm}%` : 'ดอกเบี้ย 0%'}</span>
                                   </div>
                                 </div>
                               </div>
