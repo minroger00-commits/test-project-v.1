@@ -42,6 +42,7 @@ import {
 interface UserProfile {
   id: string;
   name: string;
+  username?: string;
   role: 'admin' | 'member';
   pin: string;
   creditLimit: number; // For members
@@ -151,7 +152,7 @@ const generateDemoSlip = (bank: 'kbank' | 'scb', amount: number, name: string) =
         
         <!-- Recipient -->
         <text x="0" y="180" fill="#64748b" font-family="sans-serif" font-size="12">ไปยัง</text>
-        <text x="0" y="202" fill="#1e293b" font-family="sans-serif" font-weight="bold" font-size="14">คุณพ่อ (Admin)</text>
+        <text x="0" y="202" fill="#1e293b" font-family="sans-serif" font-weight="bold" font-size="14">เบียร์ (Admin)</text>
         <text x="0" y="220" fill="#64748b" font-family="sans-serif" font-size="12">พร้อมเพย์ 081-234-5678</text>
         
         <!-- Divider -->
@@ -177,10 +178,11 @@ const generateDemoSlip = (bank: 'kbank' | 'scb', amount: number, name: string) =
 
 // --- Initial Seed Mock Data ---
 const INITIAL_PROFILES: UserProfile[] = [
-  { id: 'u-1', name: 'คุณพ่อ (Admin)', role: 'admin', pin: '1234', creditLimit: 0, spentAmount: 0 },
-  { id: 'u-2', name: 'น้องบี (Bee)', role: 'member', pin: '1111', creditLimit: 10000, spentAmount: 0 },
-  { id: 'u-3', name: 'พี่เอ (A)', role: 'member', pin: '2222', creditLimit: 20000, spentAmount: 7300 },
-  { id: 'u-4', name: 'แม่ (Mom)', role: 'member', pin: '3333', creditLimit: 20000, spentAmount: 0 }
+  { id: 'u-1', name: 'เบียร์ (Admin)', username: 'beer', role: 'admin', pin: '9999', creditLimit: 0, spentAmount: 0 },
+  { id: 'u-5', name: 'มิน (Admin)', username: 'min', role: 'admin', pin: '7777', creditLimit: 0, spentAmount: 0 },
+  { id: 'u-2', name: 'น้องบี (Bee)', username: 'bee', role: 'member', pin: '1111', creditLimit: 10000, spentAmount: 0 },
+  { id: 'u-3', name: 'พี่เอ (A)', username: 'a', role: 'member', pin: '2222', creditLimit: 20000, spentAmount: 7300 },
+  { id: 'u-4', name: 'แม่ (Mom)', username: 'mom', role: 'member', pin: '3333', creditLimit: 20000, spentAmount: 0 }
 ];
 
 const INITIAL_REQUESTS: PurchaseRequest[] = [
@@ -261,7 +263,34 @@ export default function App() {
   // --- Persistent States ---
   const [profiles, setProfiles] = useState<UserProfile[]>(() => {
     const saved = localStorage.getItem('fp_profiles');
-    return saved ? JSON.parse(saved) : INITIAL_PROFILES;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as UserProfile[];
+        const needsUpdate = parsed.some(p => p.id === 'u-1' && (p.name.includes('คุณพ่อ') || p.pin === '1234')) || !parsed.some(p => p.id === 'u-5');
+        if (needsUpdate) {
+          let migrated = parsed.map(p => {
+            if (p.id === 'u-1') {
+              return { ...p, name: 'เบียร์ (Admin)', username: 'beer', pin: '9999', role: 'admin' as const };
+            }
+            if (p.id === 'u-2' && !p.username) return { ...p, username: 'bee' };
+            if (p.id === 'u-3' && !p.username) return { ...p, username: 'a' };
+            if (p.id === 'u-4' && !p.username) return { ...p, username: 'mom' };
+            return p;
+          });
+          
+          if (!migrated.some(p => p.id === 'u-5')) {
+            migrated.push({ id: 'u-5', name: 'มิน (Admin)', username: 'min', role: 'admin' as const, pin: '7777', creditLimit: 0, spentAmount: 0 });
+          }
+          
+          localStorage.setItem('fp_profiles', JSON.stringify(migrated));
+          return migrated;
+        }
+        return parsed;
+      } catch (e) {
+        return INITIAL_PROFILES;
+      }
+    }
+    return INITIAL_PROFILES;
   });
 
   const [requests, setRequests] = useState<PurchaseRequest[]>(() => {
@@ -277,7 +306,20 @@ export default function App() {
   // --- UI Navigation / Session States ---
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
     const saved = localStorage.getItem('fp_current_user');
-    return saved ? JSON.parse(saved) : null;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as UserProfile;
+        if (parsed.id === 'u-1' && (parsed.name.includes('คุณพ่อ') || parsed.pin === '1234')) {
+          const updated = { ...parsed, name: 'เบียร์ (Admin)', username: 'beer', pin: '9999' };
+          localStorage.setItem('fp_current_user', JSON.stringify(updated));
+          return updated;
+        }
+        return parsed;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
   });
 
   const [activeTab, setActiveTab] = useState<'main' | 'requests' | 'members' | 'transactions' | 'guide'>('main');
@@ -824,7 +866,7 @@ export default function App() {
                   <option value="" disabled className="text-slate-400">Username</option>
                   {profiles.map((p) => (
                     <option key={p.id} value={p.id} className="text-slate-800 font-medium">
-                      {p.name}
+                      {p.username ? `${p.name} (${p.username})` : p.name}
                     </option>
                   ))}
                 </select>
@@ -2042,7 +2084,7 @@ export default function App() {
                                 />
                                 <span className="text-[10px] text-slate-400 block mt-0.5">
                                   {requestType === 'pay_later'
-                                    ? 'ระบุชื่อสินค้าเพื่อช่วยให้คุณพ่อแยกแยะง่ายขึ้น'
+                                    ? 'ระบุชื่อสินค้าเพื่อช่วยให้แอดมินแยกแยะง่ายขึ้น'
                                     : 'ระบุเหตุผลหรือความจำเป็นในการขอกู้เงินสดครั้งนี้'}
                                 </span>
                               </div>
@@ -2144,7 +2186,7 @@ export default function App() {
 
                             <div className="space-y-3.5 max-h-[550px] overflow-y-auto pr-1">
                               {installments.filter(i => i.userId === currentUser.id).length === 0 ? (
-                                <p className="text-center text-xs text-slate-400 py-6">คุณยังไม่มีตารางผ่อนชำระที่นี่ ลองสร้างคำขอในแบบฟอร์มเพื่อส่งให้คุณพ่ออนุมัติ</p>
+                                <p className="text-center text-xs text-slate-400 py-6">คุณยังไม่มีตารางผ่อนชำระที่นี่ ลองสร้างคำขอในแบบฟอร์มเพื่อส่งให้แอดมินอนุมัติ</p>
                               ) : memberViewMode === 'grouped' ? (
                                 (() => {
                                   const memberInsts = installments.filter(i => i.userId === currentUser.id);
@@ -2393,7 +2435,7 @@ export default function App() {
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4">
                           <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                             <h4 className="font-bold text-slate-800 flex items-center gap-2">
-                              <Bell className="w-5 h-5 text-indigo-600" /> แจ้งการชำระเงินคุณพ่อ
+                              <Bell className="w-5 h-5 text-indigo-600" /> แจ้งการชำระเงินแอดมิน
                             </h4>
                             <button 
                               onClick={() => {
@@ -2483,7 +2525,7 @@ export default function App() {
                             </div>
                             
                             <div className="space-y-0.5">
-                              <p className="text-xs font-bold text-slate-100">พร้อมเพย์คุณพ่อ: 081-234-5678</p>
+                              <p className="text-xs font-bold text-slate-100">พร้อมเพย์แอดมิน: 081-234-5678</p>
                               <p className="text-[10px] text-sky-200">
                                 สแกนเพื่อโอนเงินยอด ฿ {notifyingBill 
                                   ? notifyingBill.amount.toLocaleString() 
@@ -3461,12 +3503,12 @@ export default function App() {
                         <li><span className="font-semibold text-slate-800">เข้าสู่ระบบ:</span> สมาชิกเลือกโปรไฟล์ของตนเองและกดรหัส PIN 4 หลัก ไม่ต้องระบุข้อมูลส่วนตัวที่มีความซับซ้อน</li>
                         <li><span className="font-semibold text-slate-800">ตรวจสอบเครดิต:</span> หน้าจอแรกจะแสดง "วงเงินชำระคงเหลือ" และตารางกำหนดผ่อนที่มีความชัดเจน</li>
                         <li><span className="font-semibold text-slate-800">ส่งคำขอผ่อนชำระ:</span> คีย์ชื่อสินค้าและราคาจากแอพส้มหรือแอพติ๊กต็อก พร้อมเลือกเดือนที่ต้องการผ่อน (เช่น 3, 6, 12 เดือน) โดยระบบจะคำนวณราคาเฉลี่ยต่อเดือนให้เรียบร้อย</li>
-                        <li><span className="font-semibold text-slate-800">แจ้งการจ่ายคืน:</span> เมื่อเงินเดือนออก สมาชิกโอนเงินเข้าบัญชีคุณพ่อ จากนั้นคลิกปุ่ม "แจ้งโอนเงิน" เพื่อเขียนข้อความระบุวันที่และจำนวนเงินให้ทางแอดมินรับทราบ</li>
+                        <li><span className="font-semibold text-slate-800">แจ้งการจ่ายคืน:</span> เมื่อเงินเดือนออก สมาชิกโอนเงินเข้าบัญชีแอดมิน จากนั้นคลิกปุ่ม "แจ้งโอนเงิน" เพื่อเขียนข้อความระบุวันที่และจำนวนเงินให้ทางแอดมินรับทราบ</li>
                       </ul>
                     </div>
 
                     <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2">
-                      <p className="font-bold text-indigo-600 uppercase tracking-wide">ฝั่งผู้ดูแลระบบ (Admin Flow - คุณพ่อ)</p>
+                      <p className="font-bold text-indigo-600 uppercase tracking-wide">ฝั่งผู้ดูแลระบบ (Admin Flow - แอดมินเบียร์/มิน)</p>
                       <ul className="list-decimal pl-4 space-y-1.5">
                         <li><span className="font-semibold text-slate-800">จัดการข้อมูลและวงเงิน:</span> ตั้งค่าเครดิตให้สมาชิกแต่ละคนตามระดับความรับผิดชอบ (เช่น น้องบี 10,000 บาท, พี่เอ 20,000 บาท)</li>
                         <li><span className="font-semibold text-slate-800">พิจารณาคำขอสั่งซื้อ:</span> ตรวจสอบสินค้าที่สมาชิกร้องขอ หากพิจารณาว่าเหมาะสมและวงเงินคงเหลือพอ จะกดยืนยันเพื่อบันทึกรายการผ่อนชำระอัตโนมัติ</li>
