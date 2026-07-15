@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import muhammadLogo from './assets/images/muhammad_pay_later_logo_1784103225588.jpg';
 import { 
   DollarSign, 
   ShieldCheck, 
@@ -17,6 +18,7 @@ import {
   Settings, 
   Check, 
   ChevronRight, 
+  ChevronLeft, 
   HelpCircle, 
   Sparkles,
   Info,
@@ -272,6 +274,7 @@ export default function App() {
   });
 
   const [activeTab, setActiveTab] = useState<'main' | 'requests' | 'members' | 'guide'>('main');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [profileToLogin, setProfileToLogin] = useState<UserProfile | null>(null);
   const [pinInput, setPinInput] = useState<string>('');
   const [loginError, setLoginError] = useState<string>('');
@@ -737,322 +740,104 @@ export default function App() {
         // ==========================================
         // LOGIN & PROFILE SELECTION SCREEN
         // ==========================================
-        <div className="flex-1 flex flex-col lg:flex-row min-h-[calc(100vh-37px)] bg-slate-50">
-          
-          {/* Left Side: Stunning Branding / Educational Column */}
-          <div className="hidden lg:flex lg:w-[45%] bg-indigo-950 text-white p-12 flex-col justify-between relative overflow-hidden">
-            {/* Background elements */}
-            <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-96 h-96 bg-indigo-800 rounded-full blur-3xl opacity-20"></div>
-            <div className="absolute bottom-0 left-0 translate-y-12 -translate-x-12 w-96 h-96 bg-indigo-500 rounded-full blur-3xl opacity-20"></div>
+        <div className="flex-1 flex items-center justify-center p-6 min-h-[calc(100vh-37px)] bg-gradient-to-tr from-[#9cd4d7] to-[#d7f5f6]">
+          <div className="relative w-full max-w-[380px] bg-[#2e6da4] rounded-[2rem] shadow-xl px-8 pt-16 pb-12 text-white">
             
-            {/* Logo and App Title */}
-            <div className="flex items-center gap-3 relative z-10">
-              <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-900/40">
-                <Landmark className="w-6 h-6" />
-              </div>
-              <div>
-                <h1 className="text-xl font-extrabold tracking-tight">Family PayLater</h1>
-                <p className="text-[10px] text-indigo-300 font-medium tracking-wider uppercase">ระบบจัดการเครดิตในครอบครัว</p>
-              </div>
+            {/* Top Overlapping Avatar Circle */}
+            <div className="w-28 h-28 bg-[#2e6da4] rounded-full flex items-center justify-center border-[6px] border-[#d7f5f6] shadow-md absolute -top-14 left-1/2 -translate-x-1/2 overflow-hidden">
+              <img 
+                src={muhammadLogo} 
+                alt="Muhammad Pay Later Mascot" 
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
             </div>
 
-            {/* Interactive Visual Graphic */}
-            <div className="my-auto relative z-10 space-y-6 max-w-md">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-900/50 border border-indigo-800 rounded-full text-xs text-indigo-300">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                วินัยการเงินเริ่มง่ายๆ ที่บ้านคุณ
-              </div>
-              
-              <h2 className="text-3xl font-extrabold leading-tight tracking-tight">
-                ช้อปออนไลน์อุ่นใจ <br />
-                <span className="text-indigo-400">ผ่อนง่ายจ่ายตรงเวลา</span> กับคุณพ่อ
-              </h2>
-              
-              <p className="text-sm text-indigo-200/80 leading-relaxed">
-                ระบบจัดการเครดิตและคำขอผ่อนชำระสินค้า Shopee/TikTok ที่โปร่งใส สมาชิกชำระคืนตามงวด คุณพ่อช่วยจัดการและพิจารณาอนุมัติวงเงินเพื่อฝึกนิสัยการออมที่ถูกต้อง
-              </p>
+            {/* Title */}
+            <h2 className="text-3xl font-bold tracking-[0.2em] text-center mb-8 text-white">LOGIN</h2>
 
-              {/* Decorative mini cards */}
-              <div className="grid grid-cols-2 gap-4 pt-4">
-                <div className="bg-indigo-900/40 border border-indigo-800/60 rounded-xl p-3.5">
-                  <ShieldCheck className="w-5 h-5 text-emerald-400 mb-1.5" />
-                  <p className="text-xs font-bold text-slate-100">ปลอดภัย 100%</p>
-                  <p className="text-[10px] text-indigo-300 mt-0.5">ควบคุมโดยผู้ปกครอง อนุมัติแบบมีเงื่อนไข</p>
+            {/* Form */}
+            <form 
+              onSubmit={handlePinSubmit} 
+              className="space-y-4"
+            >
+              {/* Username Selector */}
+              <div className="flex items-center bg-white rounded-md px-3.5 py-2.5 shadow-inner border border-slate-200">
+                <User className="w-5 h-5 text-slate-400 shrink-0" />
+                <select
+                  value={profileToLogin?.id || ''}
+                  onChange={(e) => {
+                    const prof = profiles.find(p => p.id === e.target.value);
+                    if (prof) {
+                      handleProfileSelect(prof);
+                    } else {
+                      setProfileToLogin(null);
+                    }
+                  }}
+                  className="w-full bg-transparent text-slate-700 text-sm font-medium focus:outline-none pl-3 pr-2 cursor-pointer appearance-none"
+                >
+                  <option value="" disabled className="text-slate-400">Username</option>
+                  {profiles.map((p) => (
+                    <option key={p.id} value={p.id} className="text-slate-800 font-medium">
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="text-slate-400 pointer-events-none shrink-0">
+                  <ChevronRight className="w-4 h-4 rotate-90" />
                 </div>
-                <div className="bg-indigo-900/40 border border-indigo-800/60 rounded-xl p-3.5">
-                  <Smartphone className="w-5 h-5 text-indigo-400 mb-1.5" />
-                  <p className="text-xs font-bold text-slate-100">แจ้งโอนสะดวกรวดเร็ว</p>
-                  <p className="text-[10px] text-indigo-300 mt-0.5">แนบสลิปพร้อมตรวจสอบยอดผ่านระบบทันที</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer Credit */}
-            <div className="relative z-10 text-xs text-indigo-300/60 flex items-center justify-between">
-              <span>© 2026 Family PayLater App</span>
-              <span className="flex items-center gap-1"><Lock className="w-3.5 h-3.5 text-indigo-400" /> บริการจำลองเครดิตภายในบ้าน</span>
-            </div>
-          </div>
-
-          {/* Right Side: Interactive Login Card Form */}
-          <div className="flex-1 flex items-center justify-center p-6 md:p-12 bg-slate-50">
-            <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200/80 shadow-xl p-8 md:p-10 transition-all relative overflow-hidden">
-              
-              {/* Decorative banner only on mobile/tablet */}
-              <div className="lg:hidden text-center mb-8">
-                <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center text-white mx-auto shadow-md shadow-indigo-100 mb-3">
-                  <Landmark className="w-8 h-8" />
-                </div>
-                <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Family PayLater</h2>
-                <p className="text-slate-500 text-xs mt-1">ระบบผ่อนชำระและจัดการรายจ่ายภายในครอบครัว</p>
               </div>
 
-              {!profileToLogin ? (
-                <>
-                  <div className="mb-6">
-                    <h3 className="text-lg font-bold text-slate-800">ยินดีต้อนรับกลับมา</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">กรุณาเลือกโปรไฟล์ครอบครัวของคุณเพื่อเข้าใช้งาน</p>
-                  </div>
+              {/* Password/PIN Input */}
+              <div className="flex items-center bg-white rounded-md px-3.5 py-2.5 shadow-inner border border-slate-200">
+                <Lock className="w-5 h-5 text-slate-400 shrink-0" />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  maxLength={4}
+                  value={pinInput}
+                  onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
+                  className="w-full bg-transparent text-slate-700 text-sm font-medium focus:outline-none pl-3 pr-2 placeholder:text-slate-400"
+                />
+              </div>
 
-                  <div className="space-y-3">
-                    {profiles.map((p) => (
-                      <button
-                        key={p.id}
-                        id={`btn-profile-${p.id}`}
-                        onClick={() => handleProfileSelect(p)}
-                        className="w-full p-4 border border-slate-100 hover:border-indigo-200 rounded-2xl flex items-center justify-between hover:bg-indigo-50/30 hover:shadow-sm transition-all duration-300 group cursor-pointer"
-                      >
-                        <div className="flex items-center gap-3.5">
-                          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-extrabold text-white text-sm shadow-sm transition-transform group-hover:scale-105 ${
-                            p.role === 'admin' 
-                              ? 'bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-indigo-100' 
-                              : 'bg-gradient-to-br from-slate-400 to-slate-600 shadow-slate-100'
-                          }`}>
-                            {p.name.slice(0, 2)}
-                          </div>
-                          <div className="text-left">
-                            <p className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">{p.name}</p>
-                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ${
-                              p.role === 'admin' ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-50 text-slate-600'
-                            }`}>
-                              {p.role === 'admin' ? 'ผู้ดูแลระบบ (Admin)' : 'สมาชิกทั่วไป'}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-slate-400 font-semibold opacity-0 group-hover:opacity-100 transition-opacity pr-1">ใส่ PIN</span>
-                          <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all" />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="mt-6 pt-6 border-t border-slate-100 text-center">
-                    <button 
-                      onClick={() => setShowAddMember(!showAddMember)}
-                      className="inline-flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700 font-bold text-sm transition"
-                    >
-                      <PlusCircle className="w-4 h-4" /> สร้างโปรไฟล์สมาชิกครอบครัวเพิ่ม
-                    </button>
-                  </div>
-
-                  {showAddMember && (
-                    <form onSubmit={handleAddMember} className="mt-4 p-5 bg-slate-50 rounded-2xl border border-slate-200/60 space-y-3.5 animate-fade-in">
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">สมัครสมาชิกใหม่</p>
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">ชื่อเรียก / ชื่อเล่น</label>
-                        <input 
-                          type="text" 
-                          required 
-                          placeholder="เช่น น้องส้ม, พี่แสตมป์"
-                          value={newMemberName}
-                          onChange={e => setNewMemberName(e.target.value)}
-                          className="w-full text-sm p-2.5 border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-600 mb-1">รหัส PIN 4 หลัก</label>
-                          <input 
-                            type="password" 
-                            maxLength={4}
-                            pattern="\d{4}"
-                            required 
-                            placeholder="1234"
-                            value={newMemberPin}
-                            onChange={e => setNewMemberPin(e.target.value.replace(/\D/g, ''))}
-                            className="w-full text-sm p-2.5 border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-600 mb-1">บทบาท (Role)</label>
-                          <select 
-                            value={newMemberRole}
-                            onChange={e => setNewMemberRole(e.target.value as 'admin' | 'member')}
-                            className="w-full text-sm p-2.5 border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                          >
-                            <option value="member">สมาชิกทั่วไป</option>
-                            <option value="admin">แอดมิน (Admin)</option>
-                          </select>
-                        </div>
-                      </div>
-                      {newMemberRole === 'member' && (
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-600 mb-1">วงเงินที่ได้รับอนุมัติ (บาท)</label>
-                          <input 
-                            type="number" 
-                            min={100}
-                            value={newMemberLimit}
-                            onChange={e => setNewMemberLimit(parseInt(e.target.value) || 0)}
-                            className="w-full text-sm p-2.5 border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                          />
-                        </div>
-                      )}
-                      <button 
-                        type="submit" 
-                        className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition mt-2 shadow-sm"
-                      >
-                        เพิ่มโปรไฟล์ลงทะเบียนสำเร็จ
-                      </button>
-                    </form>
-                  )}
-
-                  <div className="mt-6 p-4 bg-slate-50/60 rounded-2xl border border-slate-200/60 text-[11px] text-slate-500 space-y-1.5">
-                    <p className="font-bold text-slate-700 flex items-center gap-1">
-                      <Lock className="w-3.5 h-3.5 text-indigo-500" /> รหัส PIN สำหรับทดสอบระบบเดโม:
-                    </p>
-                    <div className="grid grid-cols-2 gap-1.5 text-left font-medium">
-                      <div>• <span className="font-semibold text-slate-600">คุณพ่อ (Admin)</span> : <span className="font-bold underline text-indigo-600">1234</span></div>
-                      <div>• <span className="font-semibold text-slate-600">น้องบี (Member)</span> : <span className="font-bold underline text-indigo-600">1111</span></div>
-                      <div>• <span className="font-semibold text-slate-600">พี่เอ (Member)</span> : <span className="font-bold underline text-indigo-600">2222</span></div>
-                      <div>• <span className="font-semibold text-slate-600">แม่ (Member)</span> : <span className="font-bold underline text-indigo-600">3333</span></div>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="space-y-6">
-                  {/* Invisible input to capture actual physical keyboard inputs */}
-                  <input
-                    type="password"
-                    maxLength={4}
-                    pattern="\d{4}"
-                    required
-                    autoFocus
-                    value={pinInput}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '');
-                      setPinInput(val);
-                    }}
-                    className="absolute opacity-0 pointer-events-none -z-50"
-                  />
-                  
-                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-extrabold text-white text-sm ${
-                        profileToLogin.role === 'admin' ? 'bg-indigo-600' : 'bg-slate-500'
-                      }`}>
-                        {profileToLogin.name.slice(0, 2)}
-                      </div>
-                      <div className="text-left">
-                        <p className="font-bold text-slate-800">{profileToLogin.name}</p>
-                        <p className="text-xs text-slate-400">{profileToLogin.role === 'admin' ? 'ผู้ดูแลหลัก (Admin)' : 'สมาชิกครอบครัว'}</p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProfileToLogin(null);
-                        setPinInput('');
-                        setLoginError('');
-                      }}
-                      className="text-xs text-indigo-600 hover:text-indigo-800 font-bold transition hover:underline"
-                    >
-                      เปลี่ยนโปรไฟล์
-                    </button>
-                  </div>
-
-                  {/* Modern PIN Display Dots */}
-                  <div className="text-center space-y-4">
-                    <label className="block text-sm font-bold text-slate-700">ระบุรหัส PIN 4 หลัก</label>
-                    
-                    <div className="flex justify-center items-center gap-4 py-2">
-                      {[0, 1, 2, 3].map((index) => (
-                        <div
-                          key={index}
-                          className={`w-4 h-4 rounded-full border transition-all duration-150 ${
-                            pinInput.length > index
-                              ? 'bg-indigo-600 border-indigo-600 scale-110 shadow-sm shadow-indigo-200'
-                              : 'bg-slate-100 border-slate-300'
-                          }`}
-                        ></div>
-                      ))}
-                    </div>
-
-                    {loginError && <p className="text-xs text-red-500 font-bold">{loginError}</p>}
-                    <p className="text-[10px] text-slate-400">กรุณาระบุ PIN ผ่านปุ่มด้านล่างหรือแป้นพิมพ์จริง</p>
-                  </div>
-
-                  {/* Interactive Virtual Banking Keypad */}
-                  <div className="grid grid-cols-3 gap-3 max-w-[280px] mx-auto pt-2">
-                    {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => (
-                      <button
-                        key={num}
-                        type="button"
-                        onClick={() => {
-                          if (pinInput.length < 4) {
-                            setPinInput(prev => prev + num);
-                          }
-                        }}
-                        className="w-16 h-16 rounded-full bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-800 font-bold text-xl flex items-center justify-center transition-all border border-slate-100 shadow-2xs hover:scale-[1.03] cursor-pointer"
-                      >
-                        {num}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => setPinInput('')}
-                      className="w-16 h-16 rounded-full text-slate-500 hover:bg-slate-50 font-bold text-xs flex items-center justify-center transition-all border border-transparent cursor-pointer"
-                    >
-                      ล้างใหม่
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (pinInput.length < 4) {
-                          setPinInput(prev => prev + '0');
-                        }
-                      }}
-                      className="w-16 h-16 rounded-full bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-800 font-bold text-xl flex items-center justify-center transition-all border border-slate-100 shadow-2xs hover:scale-[1.03] cursor-pointer"
-                    >
-                      0
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPinInput(prev => prev.slice(0, -1))}
-                      className="w-16 h-16 rounded-full text-slate-500 hover:bg-slate-50 font-bold text-xs flex items-center justify-center transition-all border border-transparent cursor-pointer"
-                    >
-                      ลบ
-                    </button>
-                  </div>
-
-                  {/* Submit Fallback button if needed (auto-submits when length === 4 anyway, but great for accessibility) */}
-                  <div className="pt-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (pinInput.length === 4) {
-                          // Auto validate triggers
-                        }
-                      }}
-                      disabled={pinInput.length < 4}
-                      className="w-full py-3 px-4 bg-indigo-600 disabled:bg-slate-200 hover:bg-indigo-700 disabled:text-slate-400 text-white rounded-xl text-sm font-bold transition shadow-sm cursor-pointer"
-                    >
-                      {pinInput.length === 4 ? 'กำลังเข้าสู่ระบบ...' : 'ระบุรหัสให้ครบถ้วน'}
-                    </button>
-                  </div>
-                </div>
+              {/* Error messages if any */}
+              {loginError && (
+                <p className="text-xs text-red-100 font-bold text-center bg-red-900/40 py-1.5 px-3 rounded-lg animate-pulse">
+                  {loginError}
+                </p>
               )}
+
+              {/* Remember Me */}
+              <div className="flex items-center gap-2 pt-1">
+                <label className="flex items-center gap-2 text-xs text-white/80 cursor-pointer select-none">
+                  <input 
+                    type="checkbox" 
+                    defaultChecked 
+                    className="rounded border-transparent bg-white/20 text-sky-500 focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer" 
+                  />
+                  <span>Remember me</span>
+                </label>
+              </div>
+
+              {/* Login Button */}
+              <div className="flex justify-center pt-4">
+                <button
+                  type="submit"
+                  className="w-full py-3 px-10 bg-[#3ca4d8] hover:bg-[#2b90c4] active:scale-[0.98] text-white font-extrabold text-sm rounded-full tracking-wider shadow-md transition-all cursor-pointer uppercase"
+                >
+                  LOGIN
+                </button>
+              </div>
+            </form>
+
+            {/* Forgot Credentials Footer Link */}
+            <div className="text-center mt-6">
+              <span className="text-xs text-white/70 hover:text-white transition-colors cursor-pointer font-medium hover:underline">
+                Forgot Username / Password?
+              </span>
             </div>
+
           </div>
         </div>
       ) : (
@@ -1062,92 +847,152 @@ export default function App() {
         <div className="flex-1 flex flex-col md:flex-row">
           
           {/* Sidebar Left Navigation */}
-          <aside className="w-full md:w-64 border-r border-slate-200 bg-white p-6 flex flex-col gap-2 shrink-0">
-            {/* Active User Summary card in Sidebar */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ผู้ใช้ปัจจุบัน</p>
-              <p className="font-bold text-slate-800 text-base flex items-center gap-1.5 mt-0.5">
-                <span className={`inline-block w-2.5 h-2.5 rounded-full ${currentUser.role === 'admin' ? 'bg-indigo-600' : 'bg-sky-500'}`}></span>
-                {currentUser.name}
-              </p>
-              <p className="text-xs text-slate-500 mt-1 uppercase">
-                {currentUser.role === 'admin' ? 'ผู้ดูแลระบบ (Admin)' : 'สมาชิกครอบครัว'}
-              </p>
-              {currentUser.role === 'member' && (
-                <div className="mt-2 pt-2 border-t border-slate-200/60">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">วงเงินคงเหลือ</p>
-                  <p className="text-sm font-bold text-indigo-700">฿ {(currentUser.creditLimit - currentUser.spentAmount).toLocaleString()}</p>
-                </div>
+          <aside className={`w-full ${isSidebarCollapsed ? 'md:w-20 p-4' : 'md:w-64 p-6'} border-r border-slate-200 bg-white flex flex-col gap-2 shrink-0 transition-all duration-300`}>
+            
+            {/* Collapse/Expand Toggle button */}
+            <div className={`hidden md:flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} mb-1 border-b border-slate-100 pb-3`}>
+              {!isSidebarCollapsed && (
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  เมนูนำทาง
+                </span>
               )}
+              <button
+                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                title={isSidebarCollapsed ? "ขยายเมนู" : "ย่อเมนู"}
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition cursor-pointer"
+              >
+                {isSidebarCollapsed ? (
+                  <ChevronRight className="w-5 h-5" />
+                ) : (
+                  <ChevronLeft className="w-5 h-5" />
+                )}
+              </button>
             </div>
+
+            {/* Active User Summary card in Sidebar */}
+            {isSidebarCollapsed ? (
+              <div 
+                className="flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-xl p-2.5 mb-2 hover:bg-slate-100 transition-colors"
+                title={`ผู้ใช้: ${currentUser.name} (${currentUser.role === 'admin' ? 'ผู้ดูแลระบบ' : 'สมาชิก'})`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-white text-sm shadow-xs ${
+                  currentUser.role === 'admin' ? 'bg-indigo-600' : 'bg-sky-500'
+                }`}>
+                  {currentUser.name.slice(0, 2)}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ผู้ใช้ปัจจุบัน</p>
+                <p className="font-bold text-slate-800 text-base flex items-center gap-1.5 mt-0.5">
+                  <span className={`inline-block w-2.5 h-2.5 rounded-full ${currentUser.role === 'admin' ? 'bg-indigo-600' : 'bg-sky-500'}`}></span>
+                  {currentUser.name}
+                </p>
+                <p className="text-xs text-slate-500 mt-1 uppercase">
+                  {currentUser.role === 'admin' ? 'ผู้ดูแลระบบ (Admin)' : 'สมาชิกครอบครัว'}
+                </p>
+                {currentUser.role === 'member' && (
+                  <div className="mt-2 pt-2 border-t border-slate-200/60">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ยอดเงินที่ค้างชำระทั้งหมดรวมทุกงวด</p>
+                    <p className="text-sm font-bold text-rose-600">
+                      ฿ {installments
+                        .filter(i => i.userId === currentUser.id && i.status !== 'paid')
+                        .reduce((sum, i) => sum + i.amount, 0)
+                        .toLocaleString()}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Sidebar Buttons */}
             <button
               onClick={() => setActiveTab('main')}
-              className={`w-full flex items-center gap-3 p-3 rounded-lg font-medium transition text-left ${
+              title={isSidebarCollapsed ? "แผงควบคุมหลัก" : undefined}
+              className={`w-full flex items-center p-3 rounded-lg font-medium transition ${
+                isSidebarCollapsed ? 'justify-center' : 'gap-3 text-left'
+              } ${
                 activeTab === 'main'
                   ? 'bg-indigo-50 text-indigo-600'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
               }`}
             >
-              <Layers className="w-5 h-5" />
-              แผงควบคุมหลัก
+              <Layers className="w-5 h-5 shrink-0" />
+              {!isSidebarCollapsed && <span>แผงควบคุมหลัก</span>}
             </button>
 
             {currentUser.role === 'admin' ? (
               <>
                 <button
                   onClick={() => setActiveTab('requests')}
-                  className={`w-full flex items-center justify-between p-3 rounded-lg font-medium transition text-left ${
+                  title={isSidebarCollapsed ? "คำขอผ่อนชำระ" : undefined}
+                  className={`w-full flex items-center p-3 rounded-lg font-medium transition ${
+                    isSidebarCollapsed ? 'justify-center relative' : 'justify-between text-left'
+                  } ${
                     activeTab === 'requests'
                       ? 'bg-indigo-50 text-indigo-600'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
                   }`}
                 >
-                  <span className="flex items-center gap-3">
-                    <FileText className="w-5 h-5" />
-                    คำขอผ่อนชำระ
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 shrink-0" />
+                    {!isSidebarCollapsed && <span>คำขอผ่อนชำระ</span>}
+                  </div>
                   {pendingRequestsCount > 0 && (
-                    <span className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
-                      {pendingRequestsCount}
-                    </span>
+                    isSidebarCollapsed ? (
+                      <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-[8px] font-bold h-4 w-4 flex items-center justify-center rounded-full animate-bounce">
+                        {pendingRequestsCount}
+                      </span>
+                    ) : (
+                      <span className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
+                        {pendingRequestsCount}
+                      </span>
+                    )
                   )}
                 </button>
 
                 <button
                   onClick={() => setActiveTab('members')}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg font-medium transition text-left ${
+                  title={isSidebarCollapsed ? "จัดการสมาชิกและวงเงิน" : undefined}
+                  className={`w-full flex items-center p-3 rounded-lg font-medium transition ${
+                    isSidebarCollapsed ? 'justify-center' : 'gap-3 text-left'
+                  } ${
                     activeTab === 'members'
                       ? 'bg-indigo-50 text-indigo-600'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
                   }`}
                 >
-                  <Users className="w-5 h-5" />
-                  จัดการสมาชิกและวงเงิน
+                  <Users className="w-5 h-5 shrink-0" />
+                  {!isSidebarCollapsed && <span>จัดการสมาชิกและวงเงิน</span>}
                 </button>
               </>
             ) : null}
 
             <button
               onClick={() => setActiveTab('guide')}
-              className={`w-full flex items-center gap-3 p-3 rounded-lg font-medium transition text-left ${
+              title={isSidebarCollapsed ? "คู่มือสร้างระบบ (Thai Guide)" : undefined}
+              className={`w-full flex items-center p-3 rounded-lg font-medium transition ${
+                isSidebarCollapsed ? 'justify-center' : 'gap-3 text-left'
+              } ${
                 activeTab === 'guide'
                   ? 'bg-indigo-50 text-indigo-600'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
               }`}
             >
-              <Info className="w-5 h-5" />
-              คู่มือสร้างระบบ (Thai Guide)
+              <Info className="w-5 h-5 shrink-0" />
+              {!isSidebarCollapsed && <span>คู่มือสร้างระบบ (Thai Guide)</span>}
             </button>
 
             <div className="mt-auto border-t border-slate-100 pt-4">
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-3 text-red-500 hover:bg-red-50 p-3 rounded-lg font-semibold w-full text-left transition"
+                title={isSidebarCollapsed ? "ออกจากระบบ" : undefined}
+                className={`flex items-center text-red-500 hover:bg-red-50 p-3 rounded-lg font-semibold w-full transition ${
+                  isSidebarCollapsed ? 'justify-center' : 'gap-3 text-left'
+                }`}
               >
-                <LogOut className="w-5 h-5" />
-                ออกจากระบบ
+                <LogOut className="w-5 h-5 shrink-0" />
+                {!isSidebarCollapsed && <span>ออกจากระบบ</span>}
               </button>
             </div>
           </aside>
@@ -1697,7 +1542,7 @@ export default function App() {
                           </div>
                           <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between text-xs text-slate-500">
                             <span>ค้างชำระทั้งหมด: {installments.filter(i => i.userId === currentUser.id && i.status !== 'paid').length} งวด</span>
-                            <span>วงเงินคงเหลือ: ฿ {(currentUser.creditLimit - currentUser.spentAmount).toLocaleString()}</span>
+                            <span>วงเงินทั้งหมด: ฿ {currentUser.creditLimit.toLocaleString()}</span>
                           </div>
                         </div>
 
